@@ -66,6 +66,9 @@ TODO:
 
 * Returning mutated self is not a good idea. Return new objects.
 * Enable oAuth
-* Enable all parameters taken by requests
+* Enable all parameters taken by requests. Lazy content fetch, with header only, ...
 * Provide services.py, that provides various classes, that document end points of various services, so developer can import bing and get going.
 * Enable bash auto completion of different services by including various uri's
+* Include headers etc as params in the response given.
+* Explore wrapping response into ServiceClasses that behave like dict, list and other
+* Add more services, freebase, wikipedia
