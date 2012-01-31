@@ -29,11 +29,11 @@ For Stackoverflow: http://api.stackoverflow.com/1.1/users/55562/questions/unansw
 
 	>>> stack = RestConsumer(base_url='http://api.stackoverflow.com/1.1')
 
-	# When there are special characters, that can't be used as python methods, wrap in the 'spc' method.
-	>>> s.users.spc('55562').questions.unanswered()
+	# When there are special characters, that can't be used as python methods, You can access it's item, like a dict.
+	>>> s.users.['55562'].questions.unanswered()
 
 	# All the top answerers of the tag python can be obtained from: http://api.stackoverflow.com/1.1/tags/python/top-answerers/all-time
-	s.tags.python.spc('top-answerers').spc('all-time')()
+	s.tags.python.['top-answerers']['all-time']()
 
 For Twitter:
 
@@ -58,13 +58,13 @@ This is all you need to know about this package. That's the whole point.
 Spend your time reading through the documentation of the REST API that you are trying to consume rather than another class wrapper built around it.
 You get a dictionary of the received JSON. Wrapping those in classes is hardly pythonic or transparent, nor does it allow you to store it in a database without enough changes. Might as well deal with the received data directly.
 
-Credits: API has been inspired by http://mike.verdone.ca/twitter/, since 3 years: http://weblog.becomingguru.com/2009/05/awesome-python-twitter-library-see.html
-While that one is twitter only, this is intended as a generic wrapper. With requests in the scene doing all the hard work, this is simple.
+Credits: API has been inspired by http://mike.verdone.ca/twitter/, about 2 years ago: http://weblog.becomingguru.com/2009/05/awesome-python-twitter-library-see.html
+While that one is twitter only, this is intended as a generic wrapper. With requests in the scene doing all the hard work, this should be simpler.
 
 
 TODO:
 
-* Returning mutated self is not a good idea. Return new objects.
+* Returning mutated self is not a good idea. Return new objects.    - Done.
 * Enable oAuth
 * Enable all parameters taken by requests. Lazy content fetch, with header only, ...
 * Provide services.py, that provides various classes, that document end points of various services, so developer can import bing and get going.
