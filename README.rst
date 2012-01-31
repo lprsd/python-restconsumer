@@ -30,10 +30,10 @@ For Stackoverflow: http://api.stackoverflow.com/1.1/users/55562/questions/unansw
 	>>> stack = RestConsumer(base_url='http://api.stackoverflow.com/1.1')
 
 	# When there are special characters, that can't be used as python methods, You can access it's item, like a dict.
-	>>> s.users.['55562'].questions.unanswered()
+	>>> s.users['55562'].questions.unanswered()
 
 	# All the top answerers of the tag python can be obtained from: http://api.stackoverflow.com/1.1/tags/python/top-answerers/all-time
-	s.tags.python.['top-answerers']['all-time']()
+	s.tags.python['top-answerers']['all-time']()
 
 For Twitter:
 
