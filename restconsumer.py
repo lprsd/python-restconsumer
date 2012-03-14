@@ -1,29 +1,26 @@
 import requests, json
 
+def append_to_url(base_url,param):
+    return "%s%s/" % (base_url,param)
+
+
 class RestConsumer(object):
 
-    def __init__(self,base_url,append_json=False,**kwargs):
-        self.base_url = base_url
-        self.uriparts = kwargs.pop('uriparts',[])
+    def __init__(self,base_url,append_json=False):
+        self.base_url = base_url if base_url[-1] == '/' else "%s%s" % (base_url,"/")
         self.append_json = append_json
-        for k,v in kwargs.items():
-            setattr(self,k,v)
 
     def __getattr__(self,key):
-        self.uriparts.append(key)
-        return self.__class__(**self.__dict__)        
-
-    def spc(self,key):
-        return self.__getattr__(key)
+        new_base = append_to_url(self.base_url,key)
+        return self.__class__(base_url=new_base,append_json=self.append_json)
 
     def __getitem__(self,key):
         return self.__getattr__(key)
 
     def __call__(self, **kwargs):
-        uri_constructed = '/'.join(self.uriparts)
-        self.uriparts = []
-        self.uri_constructed = "%s%s"%(uri_constructed,'.json') if self.append_json else uri_constructed
-        self.url = '/'.join([self.base_url,self.uri_constructed])
+        if self.append_json:
+            self.url = "%s%s" % (self.base_url[:-1],'.json')
+        print "Calling %s"%self.url
         return self.get(self.url,**kwargs)
 
     def get(self,url,**kwargs):
@@ -48,5 +45,7 @@ if __name__=='__main__':
     sr = s.users['55562'].questions.unanswered()
     pprint(sr)
 
-    sr2 = s.tags.python['top-answerers']['all-time']
+    st2 = RestConsumer(base_url='http://api.stackoverflow.com/1.1')
+    sr2 = st2.tags.python['top-answerers']['all-time']
     pprint(sr2())
+    
