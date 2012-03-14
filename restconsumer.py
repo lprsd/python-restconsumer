@@ -13,8 +13,10 @@ class RestConsumer(object):
 
     def __getattr__(self,key):
         new_base = append_to_url(self.base_url,key)
-        return self.__class__(base_url=new_base,append_json=self.append_json)
-
+        return self.__class__(base_url=new_base,
+                              append_json=self.append_json,
+                              append_slash=self.append_slash)
+    
     def __getitem__(self,key):
         return self.__getattr__(key)
 
@@ -22,7 +24,7 @@ class RestConsumer(object):
         if not self.append_slash:
             self.base_url = self.base_url[:-1]
         if self.append_json:
-            self.base_url = "%s%s" % (self.base_url[:-1],'.json')
+            self.base_url = "%s%s" % (self.base_url,'.json')
         print "Calling %s" % self.base_url
         return self.get(self.base_url,**kwargs)
 
@@ -33,6 +35,11 @@ class RestConsumer(object):
     def post(self,**kwargs):
         r = requests.post(**kwargs)
         return json.loads(r.content)
+
+
+Twitter = RestConsumer(base_url='https://api.twitter.com/1',append_json=True)
+Github = RestConsumer(base_url='https://api.github.com')
+Stackoverflow = RestConsumer(base_url='http://api.stackoverflow.com/1.1')
 
 if __name__=='__main__':
     from pprint import pprint
@@ -48,7 +55,6 @@ if __name__=='__main__':
     sr = s.users['55562'].questions.unanswered()
     pprint(sr)
 
-    st2 = RestConsumer(base_url='http://api.stackoverflow.com/1.1')
-    sr2 = st2.tags.python['top-answerers']['all-time']
+    sr2 = s.tags.python['top-answerers']['all-time']
     pprint(sr2())
     
