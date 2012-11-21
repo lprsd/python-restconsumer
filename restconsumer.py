@@ -16,7 +16,7 @@ class RestConsumer(object):
         return self.__class__(base_url=new_base,
                               append_json=self.append_json,
                               append_slash=self.append_slash)
-    
+
     def __getitem__(self,key):
         return self.__getattr__(key)
 
@@ -29,10 +29,15 @@ class RestConsumer(object):
         return self.get(self.base_url,**kwargs)
 
     def get(self,url,**kwargs):
+        if not ("headers" in kwargs and "Accept" in kwargs["headers"]):
+            kwargs["headers"]={"Accept": "application/json"}
         r = requests.get(url,**kwargs)
         return json.loads(r.content)
 
+
     def post(self,**kwargs):
+        if not ("headers" in kwargs and "Accept" in kwargs["headers"]):
+            kwargs["headers"] = {"Accept": "application/json"}
         r = requests.post(**kwargs)
         return json.loads(r.content)
 
@@ -57,4 +62,3 @@ if __name__=='__main__':
 
     sr2 = s.tags.python['top-answerers']['all-time']
     pprint(sr2())
-    
