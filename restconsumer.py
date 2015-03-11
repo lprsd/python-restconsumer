@@ -35,26 +35,3 @@ class RestConsumer(object):
     def post(self,**kwargs):
         r = requests.post(**kwargs)
         return json.loads(r.content)
-
-
-Twitter = RestConsumer(base_url='https://api.twitter.com/1',append_json=True)
-Github = RestConsumer(base_url='https://api.github.com')
-Stackoverflow = RestConsumer(base_url='http://api.stackoverflow.com/1.1')
-
-if __name__=='__main__':
-    from pprint import pprint
-    t = RestConsumer(base_url='https://api.twitter.com/1',append_json=True)
-    public_timeline = t.statuses.public_timeline()
-    pprint(public_timeline)
-
-    g = RestConsumer(base_url='https://api.github.com')
-    repos = g.users.kennethreitz.repos()
-    pprint(repos)
-
-    s = RestConsumer(base_url='http://api.stackoverflow.com/1.1')
-    sr = s.users['55562'].questions.unanswered()
-    pprint(sr)
-
-    sr2 = s.tags.python['top-answerers']['all-time']
-    pprint(sr2())
-    
