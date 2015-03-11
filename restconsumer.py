@@ -16,6 +16,7 @@ class RestConsumer(object):
     """
 
     base_url = ''
+    response = None
 
     _append_json = False
     _append_slash = False
@@ -47,9 +48,9 @@ class RestConsumer(object):
         return self.get(self.base_url, **kwargs)
 
     def get(self, url, **kwargs):
-        r = requests.get(url, **kwargs)
-        return json.loads(r.content)
+        self.response = requests.get(url, **kwargs)
+        return json.loads(self.response.content)
 
     def post(self, **kwargs):
-        r = requests.post(**kwargs)
-        return json.loads(r.content)
+        self.response = requests.post(**kwargs)
+        return json.loads(self.response.content)
