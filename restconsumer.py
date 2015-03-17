@@ -89,7 +89,7 @@ class PaginatableResponse(object):
         try:
             return next(self._content_iterator)
         except StopIteration:
-            if self._next_link['results'] == 'true':
+            if self._is_paginatable():
                 self._download_next_page()
                 return next(self._content_iterator)
             else:
@@ -99,10 +99,21 @@ class PaginatableResponse(object):
         return self.__next__()
 
     def _set_state(self, response):
-        self._next_link = response.links['next']
+        self._response = response
         self._content_iterator = iter(json.loads(response.content))
 
     def _download_next_page(self):
-        self._consumer.base_url = self._next_link['url']
+        self._consumer.base_url = self._response.links['next']['url']
         response = self._consumer()._response
         self._set_state(response)
+
+    # FIXME This guy should be reimplemented according to HTTP Link standart.
+    def _is_paginatable(self):
+        if 'next' in self._response.links:
+            if 'results' in self._response.links['next']:
+                if self._response.links['next']['results'] == 'true':
+                    return True
+            else:
+                return True
+
+        return False
