@@ -107,7 +107,7 @@ class PaginatableResponse(object):
         response = self._consumer()._response
         self._set_state(response)
 
-    # FIXME This guy should be reimplemented according to HTTP Link standart.
+    # FIXME This guy should be reimplemented according to HTTP Link standard.
     def _is_paginatable(self):
         if 'next' in self._response.links:
             if 'results' in self._response.links['next']:
