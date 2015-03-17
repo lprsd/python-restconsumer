@@ -2,7 +2,7 @@ import json
 import requests
 
 
-def json_response(response):
+def json_response(consumer, response):
     return json.loads(response.content)
 
 
@@ -24,6 +24,7 @@ class RestConsumer(object):
     _append_json = False
     _append_slash = False
     _requests_kwargs = {}
+    _response_wrapper = None
 
     def __init__(self, base_url, append_json=False, append_slash=False, response_wrapper=json_response, requests_kwargs={}):
         self.base_url = base_url if base_url[-1] == '/' else "{}{}".format(base_url, "/")
@@ -54,8 +55,31 @@ class RestConsumer(object):
 
     def get(self, url, **kwargs):
         response = requests.get(url, **kwargs)
-        return self._response_wrapper(response)
+        return self._response_wrapper(self, response)
 
     def post(self, **kwargs):
         response = requests.post(**kwargs)
-        return self._response_wrapper(response)
+        return self._response_wrapper(self, response)
+
+
+class PaginatableResponse(object):
+
+    def __init__(self, consumer, response):
+        self._consumer = consumer
+        self._response = response
+        self._next_link = response.links['next']
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._next_link['results'] == 'false':
+            raise StopIteration
+
+        self._consumer.base_url = self._next_link['url']
+        response = self._consumer()._response
+        self._next_link = response.links['next']
+        return response.content
+
+    def next(self):
+        return self.__next__()
