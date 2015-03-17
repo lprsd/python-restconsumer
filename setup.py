@@ -8,7 +8,7 @@ install_requires = [
 
 setup(
     name='python-restconsumer',
-    version='1.1.0',
+    version='1.1.2',
     description='RESTful API generic client with sweet interface.',
     long_description='See README.rst',
     classifiers=[

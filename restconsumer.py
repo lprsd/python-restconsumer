@@ -3,7 +3,7 @@ import requests
 
 
 def json_response(consumer, response):
-    return json.loads(response.content)
+    return json.loads(response.content.decode())
 
 
 def append_to_url(base_url, param):
@@ -100,7 +100,7 @@ class PaginatableResponse(object):
 
     def _set_state(self, response):
         self._response = response
-        self._content_iterator = iter(json.loads(response.content))
+        self._content_iterator = iter(json.loads(response.content.decode()))
 
     def _download_next_page(self):
         self._consumer.base_url = self._response.links['next']['url']
