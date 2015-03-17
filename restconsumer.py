@@ -80,27 +80,29 @@ class PaginatableResponse(object):
     def __init__(self, consumer, response):
         self._consumer = consumer
         self._response = response
+        self._set_state(response)
 
     def __iter__(self):
-        self._next_link = self._response.links['next']
-        self._content_iterator = iter(json.loads(self._response.content))
         return self
 
     def __next__(self):
         try:
             return next(self._content_iterator)
         except StopIteration:
-            self._download_next_page()
-            return next(self._content_iterator)
-
-    def _download_next_page(self):
-        if self._next_link['results'] == 'false':
-            raise StopIteration
-
-        self._consumer.base_url = self._next_link['url']
-        response = self._consumer()._response
-        self._next_link = response.links['next']
-        self._content_iterator = iter(json.loads(response.content))
+            if self._next_link['results'] == 'true':
+                self._download_next_page()
+                return next(self._content_iterator)
+            else:
+                raise
 
     def next(self):
         return self.__next__()
+
+    def _set_state(self, response):
+        self._next_link = response.links['next']
+        self._content_iterator = iter(json.loads(response.content))
+
+    def _download_next_page(self):
+        self._consumer.base_url = self._next_link['url']
+        response = self._consumer()._response
+        self._set_state(response)
