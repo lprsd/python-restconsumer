@@ -14,7 +14,7 @@ class RestConsumer(object):
     """ Call REST-like endpoints this way:
 
         >>> consumer = RestConsumer('http://example.com/api/v1/')
-        >>> response = consumer.projects.groups[22].events()
+        >>> events = consumer.projects.groups[22].events()
 
         and it will call http://example.com/api/v1/projects/groups/22/events/
     """
@@ -63,6 +63,19 @@ class RestConsumer(object):
 
 
 class PaginatableResponse(object):
+    """ This iterator supports pagination done by Link header.
+
+        Here's how you can use it:
+
+        >>> consumer = RestConsumer('http://example.com/api/v1/',
+                                    response_wrapper=PaginatableResponse)
+        >>> events = consumer.projects.groups[22].events()
+        >>> for event in events:
+                print event
+
+        It will iterate through all events on a server,
+        downloading next pages automatically when needed.
+    """
 
     def __init__(self, consumer, response):
         self._consumer = consumer
