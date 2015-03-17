@@ -1,5 +1,7 @@
-*.pyc
+# Text editors temporary files
+*.sw[op]
 *.sublime*
 *.wp*
 
-
+# Python byte-code artifacts
+*.py[cod]
