@@ -1,60 +1,119 @@
-import requests, json
+import json
+import requests
 
-def append_to_url(base_url,param):
-    return "%s%s/" % (base_url,param)
+
+def json_response(consumer, response):
+    return json.loads(response.content.decode())
+
+
+def append_to_url(base_url, param):
+    return "{}{}/".format(base_url, param)
 
 
 class RestConsumer(object):
+    """ Call REST-like endpoints this way:
 
-    def __init__(self,base_url,append_json=False,append_slash=False):
-        self.base_url = base_url if base_url[-1] == '/' else "%s%s" % (base_url,"/")
-        self.append_json = append_json
-        self.append_slash = append_slash
+        >>> consumer = RestConsumer('http://example.com/api/v1/')
+        >>> events = consumer.projects.groups[22].events()
 
-    def __getattr__(self,key):
-        new_base = append_to_url(self.base_url,key)
+        and it will call http://example.com/api/v1/projects/groups/22/events/
+    """
+
+    base_url = ''
+
+    _append_json = False
+    _append_slash = False
+    _requests_kwargs = {}
+    _response_wrapper = None
+
+    def __init__(self, base_url, append_json=False, append_slash=False, response_wrapper=json_response, requests_kwargs={}):
+        self.base_url = base_url if base_url[-1] == '/' else "{}{}".format(base_url, "/")
+        self._append_json = append_json
+        self._append_slash = append_slash
+        self._response_wrapper = response_wrapper
+        self._requests_kwargs = requests_kwargs
+
+    def __getattr__(self, key):
+        new_base = append_to_url(self.base_url, key)
         return self.__class__(base_url=new_base,
-                              append_json=self.append_json,
-                              append_slash=self.append_slash)
-    
-    def __getitem__(self,key):
+                              append_json=self._append_json,
+                              append_slash=self._append_slash,
+                              response_wrapper=self._response_wrapper,
+                              requests_kwargs=self._requests_kwargs)
+
+    def __getitem__(self, key):
         return self.__getattr__(key)
 
     def __call__(self, **kwargs):
-        if not self.append_slash:
+        if not self._append_slash:
             self.base_url = self.base_url[:-1]
-        if self.append_json:
-            self.base_url = "%s%s" % (self.base_url,'.json')
-        print "Calling %s" % self.base_url
-        return self.get(self.base_url,**kwargs)
+        if self._append_json:
+            self.base_url = "{}{}".format(self.base_url, '.json')
+        if self._requests_kwargs:
+            kwargs.update(self._requests_kwargs)
+        return self.get(self.base_url, **kwargs)
 
-    def get(self,url,**kwargs):
-        r = requests.get(url,**kwargs)
-        return json.loads(r.content)
+    def get(self, url, **kwargs):
+        response = requests.get(url, **kwargs)
+        return self._response_wrapper(self, response)
 
-    def post(self,**kwargs):
-        r = requests.post(**kwargs)
-        return json.loads(r.content)
+    def post(self, **kwargs):
+        response = requests.post(**kwargs)
+        return self._response_wrapper(self, response)
 
 
-Twitter = RestConsumer(base_url='https://api.twitter.com/1',append_json=True)
-Github = RestConsumer(base_url='https://api.github.com')
-Stackoverflow = RestConsumer(base_url='http://api.stackoverflow.com/1.1')
+class PaginatableResponse(object):
+    """ This iterator supports pagination done by Link header.
 
-if __name__=='__main__':
-    from pprint import pprint
-    t = RestConsumer(base_url='https://api.twitter.com/1',append_json=True)
-    public_timeline = t.statuses.public_timeline()
-    pprint(public_timeline)
+        Here's how you can use it:
 
-    g = RestConsumer(base_url='https://api.github.com')
-    repos = g.users.kennethreitz.repos()
-    pprint(repos)
+        >>> consumer = RestConsumer('http://example.com/api/v1/',
+                                    response_wrapper=PaginatableResponse)
+        >>> events = consumer.projects.groups[22].events()
+        >>> for event in events:
+                print event
 
-    s = RestConsumer(base_url='http://api.stackoverflow.com/1.1')
-    sr = s.users['55562'].questions.unanswered()
-    pprint(sr)
+        It will iterate through all events on a server,
+        downloading next pages automatically when needed.
+    """
 
-    sr2 = s.tags.python['top-answerers']['all-time']
-    pprint(sr2())
-    
+    def __init__(self, consumer, response):
+        self._consumer = consumer
+        self._response = response
+        self._set_state(response)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            return next(self._content_iterator)
+        except StopIteration:
+            if self._is_paginatable():
+                self._download_next_page()
+                return next(self._content_iterator)
+            else:
+                raise
+
+    def next(self):
+        return self.__next__()
+
+    def _set_state(self, response):
+        self._response = response
+        self._content_iterator = iter(json.loads(response.content.decode()))
+
+    def _download_next_page(self):
+        self._consumer.base_url = self._response.links['next']['url']
+        response = self._consumer()._response
+        self._set_state(response)
+
+    # FIXME This guy should be reimplemented according to HTTP Link standard.
+    def _is_paginatable(self):
+        if 'next' in self._response.links:
+            if 'results' in self._response.links['next']:
+                if self._response.links['next']['results'] == 'true':
+                    return True
+            else:
+                return True
+
+        return False
