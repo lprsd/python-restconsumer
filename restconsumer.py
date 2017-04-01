@@ -1,60 +1,68 @@
-import requests, json
+from __future__ import absolute_import, division, print_function, \
+    unicode_literals
 
-def append_to_url(base_url,param):
-    return "%s%s/" % (base_url,param)
+import requests
+from iota import *
+from iota.adapter.sandbox import SandboxAdapter
+from pprint import pprint
+
+# sample dummy api request
+sample_request = requests.get("https://api.github.com/user", auth=('user', 'passwd'))
+
+# Create the API object.
+iota = Iota(
+    # To use sandbox mode, inject a ``SandboxAdapter``.
+    adapter=SandboxAdapter(
+        # URI of the sandbox node.
+        uri='https://sandbox.iotatoken.com/api/v1/',
+
+        # Access token used to authenticate requests.
+        # Contact the node maintainer to get an access token.
+        auth_token='auth token goes here',
+    ),
+
+    # Seed used for cryptographic functions.
+    # If null, a random seed will be generated.
+    seed=b'SEED9GOES9HERE',
+)
+
+# Example of sending a transfer using the sandbox.
+# For more information, see :py:meth:`Iota.send_transfer`.
+# noinspection SpellCheckingInspection
+default_depth = 100
+
+sample_transaction = ProposedTransaction(
+    # API payment address.
+    address=
+    Address(
+        b'TESTVALUE9DONTUSEINPRODUCTION99999FBFFTG'
+        b'QFWEHEL9KCAFXBJBXGE9HID9XCOHFIDABHDG9AHDR'
+    ),
+
+    # Amount of IOTA to transfer.
+    # This value may be zero.
+    value=17,
+
+    # Optional tag to attach to the transfer.
+    tag=Tag(b'EXAMPLE'),
+
+    # Optional message to include with the transfer.
+    message=TryteString.from_string('I am making an API Request!'),
+)
 
 
-class RestConsumer(object):
+def requestData(api_request=sample_request):
+    iota.send_transfer(
+        depth=default_depth,
 
-    def __init__(self,base_url,append_json=False,append_slash=False):
-        self.base_url = base_url if base_url[-1] == '/' else "%s%s" % (base_url,"/")
-        self.append_json = append_json
-        self.append_slash = append_slash
+        # One or more :py:class:`ProposedTransaction` objects to add to the
+        # bundle.
+        transfers=[sample_transaction],
+    )
+    if sample_transaction.value == 17:
+        return api_request.json()
 
-    def __getattr__(self,key):
-        new_base = append_to_url(self.base_url,key)
-        return self.__class__(base_url=new_base,
-                              append_json=self.append_json,
-                              append_slash=self.append_slash)
-    
-    def __getitem__(self,key):
-        return self.__getattr__(key)
+def main():
+    requestData()
 
-    def __call__(self, **kwargs):
-        if not self.append_slash:
-            self.base_url = self.base_url[:-1]
-        if self.append_json:
-            self.base_url = "%s%s" % (self.base_url,'.json')
-        print "Calling %s" % self.base_url
-        return self.get(self.base_url,**kwargs)
-
-    def get(self,url,**kwargs):
-        r = requests.get(url,**kwargs)
-        return json.loads(r.content)
-
-    def post(self,**kwargs):
-        r = requests.post(**kwargs)
-        return json.loads(r.content)
-
-
-Twitter = RestConsumer(base_url='https://api.twitter.com/1',append_json=True)
-Github = RestConsumer(base_url='https://api.github.com')
-Stackoverflow = RestConsumer(base_url='http://api.stackoverflow.com/1.1')
-
-if __name__=='__main__':
-    from pprint import pprint
-    t = RestConsumer(base_url='https://api.twitter.com/1',append_json=True)
-    public_timeline = t.statuses.public_timeline()
-    pprint(public_timeline)
-
-    g = RestConsumer(base_url='https://api.github.com')
-    repos = g.users.kennethreitz.repos()
-    pprint(repos)
-
-    s = RestConsumer(base_url='http://api.stackoverflow.com/1.1')
-    sr = s.users['55562'].questions.unanswered()
-    pprint(sr)
-
-    sr2 = s.tags.python['top-answerers']['all-time']
-    pprint(sr2())
-    
+if __name__ == "__main__": main()
